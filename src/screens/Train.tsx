@@ -95,7 +95,6 @@ const DRAFT = 'gaa-compass:frees-draft'
 
 function Frees() {
   const { data, put, remove } = useStore()
-  const football = data.profile.sport === 'football' || data.profile.sport === 'lgfa'
   const [attempts, setAttempts] = useState<FreeAttempt[]>(() => {
     try {
       return JSON.parse(lsGet(DRAFT) ?? '[]')
@@ -122,9 +121,7 @@ function Frees() {
   const history = [...data.frees].sort((a, b) => b.date.localeCompare(a.date))
   const KINDS: { value: FreeKind; label: string }[] = [
     { value: 'free', label: 'Free' },
-    { value: 'long', label: football ? '45' : '65' },
     { value: 'sideline', label: 'Sideline' },
-    { value: 'penalty', label: 'Penalty' },
     { value: 'play', label: 'Play' },
   ]
 

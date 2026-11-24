@@ -13,7 +13,7 @@ export const SPORTS: { value: Sport; label: string }[] = [
   { value: 'lgfa', label: 'Ladies football' },
 ]
 const LEVELS: { value: Level; label: string }[] = [
-  { value: 'underage', label: 'Minor / U20' },
+  { value: 'underage', label: 'Minor' },
   { value: 'junior', label: 'Junior' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'senior', label: 'Senior club' },
@@ -82,9 +82,14 @@ function AboutYou({ p, set }: { p: Profile; set: Set }) {
 }
 
 function YourGame({ p, set }: { p: Profile; set: Set }) {
+  const sports = p.sex === 'male'
+    ? SPORTS.filter(s => s.value === 'hurling' || s.value === 'football')
+    : p.sex === 'female'
+    ? SPORTS.filter(s => s.value === 'camogie' || s.value === 'lgfa')
+    : SPORTS
   return (
     <div className="card stack">
-      <div className="field">Sport<Chips options={SPORTS} value={p.sport} onChange={v => set({ sport: v })} /></div>
+      <div className="field">Sport<Chips options={sports} value={p.sport} onChange={v => set({ sport: v })} /></div>
       <div className="field">Position<Chips options={POSITIONS.map(v => ({ value: v, label: POSITION_LABEL[v] }))} value={p.position} onChange={v => set({ position: v })} /></div>
       <div className="field">Playing level<Chips options={LEVELS} value={p.level} onChange={v => set({ level: v })} /></div>
       <div className="field">Gym experience<Chips options={EXPERIENCE} value={p.trainingAge} onChange={v => set({ trainingAge: v })} /></div>
