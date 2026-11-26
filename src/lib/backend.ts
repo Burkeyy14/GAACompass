@@ -4,8 +4,8 @@
 //  - local: no account, data saved in this browser only (demo / try-before-signup).
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { AppData, CollectionKey, Profile } from './types'
-import { DEFAULT_PROFILE, emptyData } from './defaults'
+import type { AppData, CollectionKey } from './types'
+import { DEFAULT_PROFILE, emptyData, normalizeProfile } from './defaults'
 import { DEMO } from './env'
 export { DEFAULT_PROFILE, emptyData }
 
@@ -45,7 +45,7 @@ function writeJSON(key: string, v: unknown) {
 }
 
 function applyLocal(data: AppData, kind: string, id: string, value: unknown | null): AppData {
-  if (kind === 'profile') return value ? { ...data, profile: { ...DEFAULT_PROFILE, ...(value as Profile) } } : data
+  if (kind === 'profile') return value ? { ...data, profile: normalizeProfile(value as Record<string, unknown>) } : data
   const k = kind as CollectionKey
   const list = (data[k] as { id: string }[]).filter(r => r.id !== id)
   if (value) list.push(value as { id: string })
@@ -66,7 +66,7 @@ export function localBackend(): Backend {
         return d
       }
       const base = emptyData()
-      return { ...base, ...(stored ?? {}), profile: { ...DEFAULT_PROFILE, ...(stored?.profile ?? {}) } }
+      return { ...base, ...(stored ?? {}), profile: normalizeProfile((stored?.profile ?? {}) as Record<string, unknown>) }
     },
     async put(kind, id, value) {
       writeJSON(key, applyLocal({ ...emptyData(), ...readJSON<Partial<AppData>>(key, {}) }, kind, id, value))

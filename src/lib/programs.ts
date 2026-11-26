@@ -10,6 +10,16 @@
 
 import type { Equipment, GoalType, Phase, Position, Profile, SessionCategory, Sport, BenchmarkTest, TrainingAge, Level, Sex } from './types'
 
+/** First sport in the player's list (always present after normalizeProfile). */
+export function primarySport(profile: Profile): Sport {
+  return profile.sports?.[0] ?? profile.sport
+}
+
+/** True when the player plays two codes. */
+export function isDualPlayer(profile: Profile): boolean {
+  return (profile.sports?.length ?? 1) > 1
+}
+
 export type ItemKind = 'reps' | 'hold' | 'sprint' | 'drill'
 
 export interface Item {
@@ -917,17 +927,19 @@ export const BENCHMARKS: Record<BenchmarkTest, { label: string; unit: string; lo
 export const PHASE_LABEL: Record<Phase, string> = { off: 'Off-season', pre: 'Pre-season', in: 'In-season' }
 
 /** Extra sessions per week allowed for this player in this phase. */
-export function maxExtraSessions(phase: Phase, a: Athlete): number {
+export function maxExtraSessions(phase: Phase, a: Athlete, dual = false): number {
   let m = { off: 4, pre: 3, in: 2 }[phase]
   if (a.ageBand === 'youth') m = Math.min(m, phase === 'in' ? 1 : 2)
   if (a.ageBand === 'masters' && phase !== 'off') m -= 1
   if (a.level === 'intercounty' && phase === 'in') m = Math.min(m, 1) // county squads already carry a big load
+  if (dual) m -= 1 // dual players carry a higher baseline load from two teams
   return Math.max(1, m)
 }
 
 /** Short personalised notes shown on the plan, so the player sees why it looks the way it does. */
 export function personalNotes(a: Athlete, p: Profile): string[] {
   const n: string[] = []
+  if (isDualPlayer(p)) n.push('Tailored for a dual player: one fewer extra session a week, because playing two codes already adds more base load.')
   if (a.prevHamstring) n.push('Recent hamstring injury: Nordics in every gym session, a longer warm-up and a slower build to top speed.')
   if (a.prevGroin) n.push('Recent groin injury: Copenhagen planks start on the short lever.')
   if (a.prevCalf || a.ageBand === 'masters') n.push('Extra calf and Achilles work in your warm-ups.')

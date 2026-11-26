@@ -28,7 +28,7 @@ export interface PlanFeedback {
   flags: Flag[]
 }
 
-export function planFeedback(days: DayActivity[][]): PlanFeedback {
+export function planFeedback(days: DayActivity[][], isDualPlayer = false): PlanFeedback {
   const score = days.reduce((s, d) => s + d.reduce((a, act) => a + ACTIVITY_META[act].weight, 0), 0)
   const band = score <= 5 ? 'under' : score <= 10 ? 'optimal' : score <= 13 ? 'high' : 'overload'
   const headline = {
@@ -47,7 +47,13 @@ export function planFeedback(days: DayActivity[][]): PlanFeedback {
   const easyDays = days.filter((_, i) => isEasy(i)).length
 
   if (matches > 2) flags.push({ level: 'red', text: `${matches} matches planned. That is a very high match load.` })
-  else if (matches === 2) flags.push({ level: 'amber', text: 'Two matches this week. Keep everything else light.' })
+  else if (matches === 2) {
+    if (isDualPlayer && easyDays < 2) {
+      flags.push({ level: 'red', text: 'Dual player with two match days this week and fewer than 2 rest days. Add a rest or recovery day.' })
+    } else {
+      flags.push({ level: 'amber', text: 'Two matches this week. Keep everything else light.' })
+    }
+  }
   if (easyDays === 0) flags.push({ level: 'red', text: 'No rest or recovery day at all this week.' })
   else if (easyDays < 2) flags.push({ level: 'red', text: 'Fewer than two rest/recovery days.' })
 

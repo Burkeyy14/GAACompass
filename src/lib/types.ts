@@ -9,13 +9,25 @@ export type TrainingAge = 'beginner' | 'intermediate' | 'advanced'
 export type Sex = 'male' | 'female' | 'unspecified'
 export type InjuryArea = 'hamstring' | 'groin' | 'calf' | 'ankle' | 'knee' | 'back' | 'shoulder'
 
+/** Per-code training and match schedule for dual players. */
+export interface TeamSchedule {
+  sport: Sport
+  /** 0 = Monday … 6 = Sunday */
+  trainingDays: number[]
+  /** usual match day, null if none */
+  matchDay: number | null
+}
+
 export interface Profile {
   name: string
   age: number | null
   sex: Sex
   heightCm: number | null
   weightKg: number | null
+  /** Backward-compat primary sport (= sports[0] after normalizeProfile). */
   sport: Sport
+  /** All codes played, min 1, max 2. Set by normalizeProfile from legacy `sport` if absent. */
+  sports: Sport[]
   position: Position
   level: Level
   /** gym experience */
@@ -23,10 +35,12 @@ export interface Profile {
   /** injuries in the last 12 months */
   recentInjuries: InjuryArea[]
   county: string // county key, or 'default'
-  /** 0 = Monday ... 6 = Sunday */
+  /** Backward-compat training days (= teams[0].trainingDays after normalizeProfile). */
   clubTrainingDays: number[]
-  /** usual match day, null if none */
+  /** Backward-compat match day (= teams[0].matchDay after normalizeProfile). */
   matchDay: number | null
+  /** Per-code schedules. Set by normalizeProfile from legacy fields if absent. */
+  teams: TeamSchedule[]
   phase: Phase
   plan: 'free' | 'pro'
   onboarded: boolean
@@ -88,6 +102,8 @@ export interface FreeAttempt {
   y: number // metres out from the end line
   scored: boolean
   kind: FreeKind
+  /** Which code this attempt was for. Old attempts without sport count as primarySport. */
+  sport?: Sport
 }
 
 export interface FreeSession {
@@ -109,6 +125,8 @@ export interface Goal {
   phase: Phase
   active: boolean
   createdAt: string
+  /** For frees/skills goals, which code the plan is for. Defaults to primarySport. */
+  sport?: Sport
 }
 
 export type BenchmarkTest =

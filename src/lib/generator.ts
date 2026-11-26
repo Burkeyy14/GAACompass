@@ -1,9 +1,9 @@
 // Turns a goal + the player's weekly schedule into a week-by-week plan,
 // and adapts today's session to their check-in (auto-regulation).
 
-import type { CheckIn, DayActivity, Goal, Profile, SessionCategory } from './types'
+import type { CheckIn, DayActivity, Goal, Profile, SessionCategory, Sport } from './types'
 import type { Ctx, ProgramSession } from './programs'
-import { GOALS, athleteFrom, maxExtraSessions, protectSession, recoverySession, techniqueSession } from './programs'
+import { GOALS, athleteFrom, isDualPlayer, maxExtraSessions, primarySport, protectSession, recoverySession, techniqueSession } from './programs'
 import { addDays, daysBetween, weekday } from './dates'
 import type { LoadStatus } from './load'
 import type { ReadinessResult } from './recovery'
@@ -27,7 +27,9 @@ export function weekCtx(goal: Goal, profile: Profile, week: number): Ctx {
   const pos = (week - 1) % 4
   // every 4th week is a deload (lighter) week — also a good week to retest
   const deload = pos === 3
-  return { step: Math.min(pos, 2), deload, week, equipment: goal.equipment, phase: goal.phase, sport: profile.sport, athlete: athleteFrom(profile) }
+  // frees/skills goals may be tied to a specific code; fall back to primary sport
+  const sport: Sport = goal.sport ?? primarySport(profile)
+  return { step: Math.min(pos, 2), deload, week, equipment: goal.equipment, phase: goal.phase, sport, athlete: athleteFrom(profile) }
 }
 
 function themeFor(ctx: Ctx, week: number, total: number): string {
@@ -40,14 +42,26 @@ function themeFor(ctx: Ctx, week: number, total: number): string {
 export type DayKind = 'match' | 'md+1' | 'md-1' | 'club' | 'free'
 
 export function dayKinds(profile: Profile): DayKind[] {
+  const teams = profile.teams?.length ? profile.teams : [{ sport: profile.sport, trainingDays: profile.clubTrainingDays, matchDay: profile.matchDay }]
+  const matchDays = teams.map(t => t.matchDay).filter((md): md is number => md !== null)
+  const trainingDays = [...new Set(teams.flatMap(t => t.trainingDays))]
   return Array.from({ length: 7 }, (_, d) => {
-    const md = profile.matchDay
-    if (md !== null && d === md) return 'match'
-    if (md !== null && d === (md + 1) % 7) return 'md+1'
-    if (md !== null && d === (md + 6) % 7) return 'md-1'
-    if (profile.clubTrainingDays.includes(d)) return 'club'
+    if (matchDays.includes(d)) return 'match'
+    if (matchDays.some(md => (md + 1) % 7 === d)) return 'md+1'
+    if (matchDays.some(md => (md + 6) % 7 === d)) return 'md-1'
+    if (trainingDays.includes(d)) return 'club'
     return 'free'
   })
+}
+
+/** Sport that trains or plays on the given day index (0=Mon), or null if ambiguous / none. */
+export function sportForDay(profile: Profile, day: number): Sport | null {
+  const teams = profile.teams?.length ? profile.teams : []
+  const matchTeams = teams.filter(t => t.matchDay === day)
+  if (matchTeams.length === 1) return matchTeams[0].sport
+  const trainTeams = teams.filter(t => t.trainingDays.includes(day))
+  if (trainTeams.length === 1) return trainTeams[0].sport
+  return null
 }
 
 /** Greedy scheduler: put each session on the most suitable day. */
@@ -116,7 +130,7 @@ export function scheduleWeek(sessions: ProgramSession[], profile: Profile): Sche
 
 export function generatePlan(goal: Goal, profile: Profile): PlanWeek[] {
   const def = GOALS[goal.type]
-  const n = Math.max(1, Math.min(goal.extraSessions, maxExtraSessions(goal.phase, athleteFrom(profile))))
+  const n = Math.max(1, Math.min(goal.extraSessions, maxExtraSessions(goal.phase, athleteFrom(profile), isDualPlayer(profile))))
   const weeks: PlanWeek[] = []
   for (let w = 1; w <= goal.weeks; w++) {
     const ctx = weekCtx(goal, profile, w)

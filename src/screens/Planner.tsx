@@ -4,7 +4,7 @@ import type { DayActivity } from '../lib/types'
 import { useStore } from '../lib/store'
 import { addDays, DAY_SHORT, fromISO, mondayOf, today } from '../lib/dates'
 import { ACTIVITY_META, ACTIVITY_ORDER, planFeedback } from '../lib/load'
-import { CATEGORY_ACTIVITY, sessionsForDate, suggestedWeekDays } from '../lib/generator'
+import { CATEGORY_ACTIVITY, sessionsForDate, sportForDay, suggestedWeekDays } from '../lib/generator'
 import { Banner } from '../components/ui'
 import { CatBadge, Icon } from '../components/Icon'
 
@@ -15,7 +15,7 @@ export function Planner({ nav }: { nav: Nav }) {
   const saved = data.weekPlans.find(w => w.weekStart === week)
   const days: DayActivity[][] = saved?.days ?? suggestedWeekDays(data.goals, data.profile, week)
 
-  const fb = planFeedback(days)
+  const fb = planFeedback(days, data.profile.sports?.length > 1)
   const isThisWeek = week === mondayOf(today())
   const fmt = (iso: string) => fromISO(iso).toLocaleDateString('en-IE', { day: 'numeric', month: 'short' })
   const bandColor = { under: 'var(--muted)', optimal: 'var(--green)', high: 'var(--amber)', overload: 'var(--red)' }[fb.band]
@@ -77,6 +77,15 @@ export function Planner({ nav }: { nav: Nav }) {
           const logged = data.sessions.filter(s => s.date === date)
           const doneActs = new Set(logged.map(s => CATEGORY_ACTIVITY[s.category]))
           const shown = list.length ? list : (['rest'] as DayActivity[])
+          const daySport = sportForDay(data.profile, d)
+          const SPORT_SHORT: Record<string, string> = { hurling: 'Hurling', football: 'Football', camogie: 'Camogie', lgfa: 'LGFA' }
+          function actLabel(a: DayActivity): string {
+            if (data.profile.sports?.length > 1 && daySport) {
+              if (a === 'match') return `${SPORT_SHORT[daySport]} match`
+              if (a === 'pitch') return `${SPORT_SHORT[daySport]} training`
+            }
+            return ACTIVITY_META[a].label
+          }
           return (
             <div key={d} className={'day' + (date === today() ? ' today' : '')}>
               <div className="d">
@@ -88,7 +97,7 @@ export function Planner({ nav }: { nav: Nav }) {
                   {shown.map(a => (
                     <span key={a} className={'act' + (doneActs.has(a) ? ' done' : '')}>
                       <CatBadge cat={a} size={22} />
-                      {ACTIVITY_META[a].label}
+                      {actLabel(a)}
                       {doneActs.has(a) && <Icon name="check" size={14} stroke={3} className="tick" />}
                     </span>
                   ))}

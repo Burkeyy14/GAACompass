@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import type { InjuryArea, Level, Phase, Position, Profile, Sex, Sport, TrainingAge } from '../lib/types'
+import type { InjuryArea, Level, Phase, Position, Profile, Sex, Sport, TeamSchedule, TrainingAge } from '../lib/types'
 import { COUNTIES } from '../lib/counties'
 import { DAY_SHORT } from '../lib/dates'
 import { POSITION_LABEL } from '../lib/programs'
 import { Chips } from '../components/ui'
 import { Icon } from '../components/Icon'
+
+const SPORT_LABEL: Record<Sport, string> = { hurling: 'Hurling', football: 'Football', camogie: 'Camogie', lgfa: 'Ladies football' }
 
 export const SPORTS: { value: Sport; label: string }[] = [
   { value: 'hurling', label: 'Hurling' },
@@ -87,9 +89,28 @@ function YourGame({ p, set }: { p: Profile; set: Set }) {
     : p.sex === 'female'
     ? SPORTS.filter(s => s.value === 'camogie' || s.value === 'lgfa')
     : SPORTS
+
+  function toggleSport(sportVal: Sport) {
+    const isOn = p.sports.includes(sportVal)
+    let newSports: Sport[]
+    if (isOn) {
+      if (p.sports.length === 1) return
+      newSports = p.sports.filter(s => s !== sportVal)
+    } else {
+      if (p.sports.length >= 2) return
+      newSports = [...p.sports, sportVal]
+    }
+    const newTeams: TeamSchedule[] = newSports.map(s => p.teams.find(t => t.sport === s) ?? { sport: s, trainingDays: [], matchDay: null })
+    set({ sports: newSports, teams: newTeams, sport: newSports[0], clubTrainingDays: newTeams[0].trainingDays, matchDay: newTeams[0].matchDay })
+  }
+
   return (
     <div className="card stack">
-      <div className="field">Sport<Chips options={sports} value={p.sport} onChange={v => set({ sport: v })} /></div>
+      <div className="field">
+        What do you play?
+        <Chips options={sports} value={p.sports} onChange={toggleSport} />
+        {p.sports.length < 2 && <span className="tiny muted">Dual player? Pick both.</span>}
+      </div>
       <div className="field">Position<Chips options={POSITIONS.map(v => ({ value: v, label: POSITION_LABEL[v] }))} value={p.position} onChange={v => set({ position: v })} /></div>
       <div className="field">Playing level<Chips options={LEVELS} value={p.level} onChange={v => set({ level: v })} /></div>
       <div className="field">Gym experience<Chips options={EXPERIENCE} value={p.trainingAge} onChange={v => set({ trainingAge: v })} /></div>
@@ -115,25 +136,39 @@ function YourGame({ p, set }: { p: Profile; set: Set }) {
 }
 
 function YourWeek({ p, set }: { p: Profile; set: Set }) {
+  function setTeam(sportVal: Sport, patch: Partial<TeamSchedule>) {
+    const teams = p.teams.map(t => t.sport === sportVal ? { ...t, ...patch } : t)
+    set({ teams, sport: teams[0].sport, clubTrainingDays: teams[0].trainingDays, matchDay: teams[0].matchDay })
+  }
+
   return (
     <div className="card stack">
       <div className="small muted">Your sessions get planned around these days, so you're fresh for matches.</div>
-      <div className="field">
-        Club / county training nights
-        <Chips
-          options={DAY_SHORT.map((d, i) => ({ value: i, label: d }))}
-          value={p.clubTrainingDays}
-          onChange={d => set({ clubTrainingDays: p.clubTrainingDays.includes(d) ? p.clubTrainingDays.filter(x => x !== d) : [...p.clubTrainingDays, d].sort() })}
-        />
-      </div>
-      <div className="field">
-        Usual match day
-        <Chips
-          options={[{ value: -1, label: 'None' }, ...DAY_SHORT.map((d, i) => ({ value: i, label: d }))]}
-          value={p.matchDay ?? -1}
-          onChange={d => set({ matchDay: d === -1 ? null : d, clubTrainingDays: p.clubTrainingDays.filter(x => x !== d) })}
-        />
-      </div>
+      {p.teams.map(team => (
+        <div key={team.sport} className="stack sm">
+          {p.sports.length > 1 && (
+            <div className="tiny" style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--accent)' }}>
+              {SPORT_LABEL[team.sport]}
+            </div>
+          )}
+          <div className="field">
+            Training nights
+            <Chips
+              options={DAY_SHORT.map((d, i) => ({ value: i, label: d }))}
+              value={team.trainingDays}
+              onChange={d => setTeam(team.sport, { trainingDays: team.trainingDays.includes(d) ? team.trainingDays.filter(x => x !== d) : [...team.trainingDays, d].sort() })}
+            />
+          </div>
+          <div className="field">
+            Usual match day
+            <Chips
+              options={[{ value: -1, label: 'None' }, ...DAY_SHORT.map((d, i) => ({ value: i, label: d }))]}
+              value={team.matchDay ?? -1}
+              onChange={d => setTeam(team.sport, { matchDay: d === -1 ? null : d, trainingDays: team.trainingDays.filter(x => x !== d) })}
+            />
+          </div>
+        </div>
+      ))}
       <div className="field">Season phase<Chips options={PHASES} value={p.phase} onChange={v => set({ phase: v })} /></div>
     </div>
   )

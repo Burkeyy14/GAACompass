@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
 import type { Nav } from '../App'
-import type { BenchmarkTest, Equipment, Goal, GoalType, Phase } from '../lib/types'
+import type { BenchmarkTest, Equipment, Goal, GoalType, Phase, Sport } from '../lib/types'
 import { useStore } from '../lib/store'
 import { usePro } from '../lib/account'
 import { addDays, DAY_SHORT, mondayOf, prettyDate, today, uid } from '../lib/dates'
 import { ask } from '../lib/env'
-import { athleteFrom, BENCHMARKS, GOALS, maxExtraSessions, personalNotes, PHASE_LABEL, POSITION_GOALS, POSITION_LABEL } from '../lib/programs'
+import { athleteFrom, BENCHMARKS, GOALS, isDualPlayer, maxExtraSessions, personalNotes, PHASE_LABEL, POSITION_GOALS, POSITION_LABEL, primarySport } from '../lib/programs'
 import { currentWeekIndex, generatePlan } from '../lib/generator'
 import { Banner, Chips, Sheet, Stepper } from '../components/ui'
 import { CatBadge, GOAL_ICON, GOAL_TINT, Icon } from '../components/Icon'
-import { PHASES } from './ProfileForm'
+import { PHASES, SPORTS } from './ProfileForm'
 
 function GoalIcon({ type, size = 46 }: { type: GoalType; size?: number }) {
   return (
@@ -97,19 +97,24 @@ function GoalPicker({ onPick }: { onPick: () => void }) {
 function NewGoal({ onDone }: { onDone: (g: Goal) => void }) {
   const { data } = useStore()
   const athlete = athleteFrom(data.profile)
+  const dual = isDualPlayer(data.profile)
   const rec = POSITION_GOALS[data.profile.position]
   const [type, setType] = useState<GoalType | null>(null)
   const [weeks, setWeeks] = useState(8)
   const [phase, setPhase] = useState<Phase>(data.profile.phase)
   const [extra, setExtra] = useState(2)
   const [equipment, setEquipment] = useState<Equipment>('gym')
+  const [goalSport, setGoalSport] = useState<Sport>(primarySport(data.profile))
   const thisMon = mondayOf(today())
   const [start, setStart] = useState(thisMon)
-  const max = maxExtraSessions(phase, athlete)
+  const max = maxExtraSessions(phase, athlete, dual)
   const n = Math.min(extra, max)
+  const needsSportPicker = dual && type !== null && (type === 'frees' || type === 'skills')
 
-  const draft: Goal | null = type ? { id: uid(), type, startDate: start, weeks, extraSessions: n, equipment, phase, active: true, createdAt: today() } : null
-  const preview = useMemo(() => (draft ? generatePlan(draft, data.profile)[0] : null), [type, weeks, phase, n, equipment, start, data.profile]) // eslint-disable-line react-hooks/exhaustive-deps
+  const draft: Goal | null = type
+    ? { id: uid(), type, startDate: start, weeks, extraSessions: n, equipment, phase, active: true, createdAt: today(), sport: needsSportPicker ? goalSport : undefined }
+    : null
+  const preview = useMemo(() => (draft ? generatePlan(draft, data.profile)[0] : null), [type, weeks, phase, n, equipment, start, data.profile, goalSport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!type) {
     const order = [...rec, ...(Object.keys(GOALS) as GoalType[]).filter(g => !rec.includes(g))]
@@ -142,6 +147,16 @@ function NewGoal({ onDone }: { onDone: (g: Goal) => void }) {
         <Banner kind="amber">This plan is for <b>preventing</b> hamstring injuries. If you have a strain now, follow your physio's return-to-play plan first and start this once you're cleared.</Banner>
       )}
       <div className="card stack">
+        {needsSportPicker && (
+          <div className="field">
+            Which code?
+            <Chips
+              options={data.profile.sports.map(s => ({ value: s, label: SPORTS.find(x => x.value === s)?.label ?? s }))}
+              value={goalSport}
+              onChange={setGoalSport}
+            />
+          </div>
+        )}
         <div className="field">Season phase<Chips options={PHASES} value={phase} onChange={setPhase} /></div>
         <div className="field">
           Extra sessions a week, on top of club training
@@ -158,7 +173,7 @@ function NewGoal({ onDone }: { onDone: (g: Goal) => void }) {
           <div style={{ padding: '12px 16px 0' }}>
             <h3>Your first week</h3>
             <div className="tiny muted" style={{ marginTop: 2 }}>
-              Placed around club nights ({data.profile.clubTrainingDays.map(d => DAY_SHORT[d]).join(', ') || 'none'}) and matches ({data.profile.matchDay === null ? 'none' : DAY_SHORT[data.profile.matchDay]})
+              {data.profile.teams.map(t => `${t.trainingDays.map(d => DAY_SHORT[d]).join(', ') || 'no training'}${t.matchDay !== null ? ` + ${DAY_SHORT[t.matchDay]} match` : ''}`).join(' / ')}
             </div>
           </div>
           <div className="list">

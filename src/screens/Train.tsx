@@ -95,6 +95,8 @@ const DRAFT = 'gaa-compass:frees-draft'
 
 function Frees() {
   const { data, put, remove } = useStore()
+  const dual = data.profile.sports?.length > 1
+  const [activeSport, setActiveSport] = useState<import('../lib/types').Sport>(data.profile.sports?.[0] ?? data.profile.sport)
   const [attempts, setAttempts] = useState<FreeAttempt[]>(() => {
     try {
       return JSON.parse(lsGet(DRAFT) ?? '[]')
@@ -108,13 +110,17 @@ function Frees() {
 
   useEffect(() => lsSet(DRAFT, JSON.stringify(attempts)), [attempts])
 
-  const scored = attempts.filter(a => a.scored).length
-  const pct = attempts.length ? Math.round((scored / attempts.length) * 100) : 0
-  const longest = attempts.filter(a => a.scored).reduce((m, a) => Math.max(m, Math.round(distance(a))), 0)
+  // For dual players, stats split by code; old attempts without sport count as primarySport
+  const primarySport = data.profile.sports?.[0] ?? data.profile.sport
+  const shownAttempts = dual ? attempts.filter(a => (a.sport ?? primarySport) === activeSport) : attempts
+
+  const scored = shownAttempts.filter(a => a.scored).length
+  const pct = shownAttempts.length ? Math.round((scored / shownAttempts.length) * 100) : 0
+  const longest = shownAttempts.filter(a => a.scored).reduce((m, a) => Math.max(m, Math.round(distance(a))), 0)
 
   function record(s: boolean) {
     if (!pending) return
-    setAttempts(a => [...a, { ...pending, scored: s, kind }])
+    setAttempts(a => [...a, { ...pending, scored: s, kind, sport: activeSport }])
     setPending(null)
   }
 
@@ -124,6 +130,7 @@ function Frees() {
     { value: 'sideline', label: 'Sideline' },
     { value: 'play', label: 'Play' },
   ]
+  const SPORT_LABEL: Record<string, string> = { hurling: 'Hurling', football: 'Football', camogie: 'Camogie', lgfa: 'Ladies football' }
 
   return (
     <>
@@ -134,8 +141,18 @@ function Frees() {
         </Banner>
       )}
 
+      {dual && (
+        <div className="seg">
+          {data.profile.sports.map(s => (
+            <button key={s} className={activeSport === s ? 'on' : ''} onClick={() => { setActiveSport(s); setPending(null) }}>
+              {SPORT_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid3">
-        <div className="stat"><div className="v">{scored}/{attempts.length}</div><div className="l">Scored</div></div>
+        <div className="stat"><div className="v">{scored}/{shownAttempts.length}</div><div className="l">Scored</div></div>
         <div className="stat"><div className="v">{pct}%</div><div className="l">Accuracy</div></div>
         <div className="stat"><div className="v">{longest || '—'}{longest ? 'm' : ''}</div><div className="l">Longest</div></div>
       </div>
@@ -144,7 +161,7 @@ function Frees() {
         {KINDS.map(k => <button key={k.value} className={kind === k.value ? 'on' : ''} onClick={() => setKind(k.value)}>{k.label}</button>)}
       </div>
 
-      <Pitch sport={data.profile.sport} attempts={attempts} pending={pending} onTap={(x, y) => setPending({ x, y })} />
+      <Pitch sport={activeSport} attempts={shownAttempts} pending={pending} onTap={(x, y) => setPending({ x, y })} />
 
       <div style={pending ? { position: 'sticky', bottom: 'calc(92px + env(safe-area-inset-bottom))', zIndex: 5 } : undefined}>
         {pending ? (
