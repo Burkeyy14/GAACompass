@@ -79,6 +79,17 @@ function AboutYou({ p, set }: { p: Profile; set: Set }) {
         </label>
       </div>
       <div className="tiny muted">Your weight sets your starting gym weights. Your age changes how much training volume we prescribe.</div>
+      <label className="field">
+        MyFitnessPal profile URL (optional)
+        <input
+          type="url"
+          inputMode="url"
+          value={p.mfpUrl ?? ''}
+          onChange={e => set({ mfpUrl: e.target.value || undefined })}
+          placeholder="https://www.myfitnesspal.com/profile/username"
+        />
+        <span className="tiny muted">Lets you open your diary directly from the food log.</span>
+      </label>
     </div>
   )
 }

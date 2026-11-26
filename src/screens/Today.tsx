@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Nav } from '../App'
 import { useStore } from '../lib/store'
 import { mondayOf, prettyDate, today, weekday } from '../lib/dates'
@@ -5,14 +6,17 @@ import { readiness } from '../lib/recovery'
 import { ACTIVITY_META, loadStatus } from '../lib/load'
 import { currentWeekIndex, sessionsForDate } from '../lib/generator'
 import { GOALS } from '../lib/programs'
-import { Ring, LEVEL_COLOR, Banner } from '../components/ui'
+import { Ring, LEVEL_COLOR, Banner, Sheet } from '../components/ui'
 import { CatBadge, Icon, GOAL_ICON, GOAL_TINT } from '../components/Icon'
 import { PlannedCard } from '../components/PlannedCard'
 import { InstallPrompt } from '../components/InstallPrompt'
 import { CATEGORY_ACTIVITY } from '../lib/generator'
+import { FuelRow, WeighInPrompt, FoodLogSheet, WeightLogSheet } from './NutritionLog'
 
 export function Today({ nav }: { nav: Nav }) {
   const { data } = useStore()
+  const [showFoodLog, setShowFoodLog] = useState(false)
+  const [showWeightLog, setShowWeightLog] = useState(false)
   const t = today()
   const checkin = data.checkins.find(c => c.date === t) ?? null
   const r = checkin ? readiness(checkin, data.checkins) : null
@@ -137,7 +141,21 @@ export function Today({ nav }: { nav: Nav }) {
         )
       })}
 
+      <WeighInPrompt onLogWeight={() => setShowWeightLog(true)} />
+      <FuelRow onLogFood={() => setShowFoodLog(true)} />
+
       <InstallPrompt />
+
+      {showFoodLog && (
+        <Sheet onClose={() => setShowFoodLog(false)} title="Log today's food">
+          <FoodLogSheet onDone={() => setShowFoodLog(false)} />
+        </Sheet>
+      )}
+      {showWeightLog && (
+        <Sheet onClose={() => setShowWeightLog(false)} title="Log your weight">
+          <WeightLogSheet onDone={() => setShowWeightLog(false)} />
+        </Sheet>
+      )}
     </>
   )
 }

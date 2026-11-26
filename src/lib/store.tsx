@@ -90,7 +90,7 @@ export function StoreProvider({ backend, children }: { backend: Backend; childre
     async (d: AppData) => {
       setData(d)
       await backend.put('profile', 'me', d.profile)
-      const kinds: CollectionKey[] = ['checkins', 'weekPlans', 'sessions', 'frees', 'goals', 'benchmarks']
+      const kinds: CollectionKey[] = ['checkins', 'weekPlans', 'sessions', 'frees', 'goals', 'benchmarks', 'nutrition', 'weights']
       for (const k of kinds) for (const r of d[k] as { id: string }[]) await backend.put(k, r.id, r)
     },
     [backend],

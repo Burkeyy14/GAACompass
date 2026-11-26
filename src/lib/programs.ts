@@ -811,6 +811,15 @@ export interface GoalDef {
 }
 
 export const GOALS: Record<GoalType, GoalDef> = {
+  body: {
+    type: 'body',
+    title: 'Body composition',
+    short: 'Fuel',
+    blurb: 'Personalised nutrition targets to lean out, maintain or build size alongside your training.',
+    tests: [],
+    defaultWeeks: 12,
+    sessions: () => [],
+  },
   speed: {
     type: 'speed',
     title: 'Get quicker',

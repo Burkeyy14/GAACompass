@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Nav } from '../App'
-import type { BenchmarkTest, Equipment, Goal, GoalType, Phase, Sport } from '../lib/types'
+import type { BodyDirection, BenchmarkTest, Equipment, Goal, GoalType, Phase, Sport } from '../lib/types'
 import { useStore } from '../lib/store'
 import { usePro } from '../lib/account'
 import { addDays, DAY_SHORT, mondayOf, prettyDate, today, uid } from '../lib/dates'
@@ -25,7 +25,9 @@ export function Goals({ nav }: { nav: Nav }) {
   const [creating, setCreating] = useState(false)
   const active = data.goals.filter(g => g.active)
   const past = data.goals.filter(g => !g.active)
-  const canAdd = pro || active.length === 0
+  // Body goals are free and don't count toward the 1-goal limit
+  const trainingGoals = active.filter(g => g.type !== 'body')
+  const canAdd = pro || trainingGoals.length === 0
 
   return (
     <>
@@ -116,8 +118,11 @@ function NewGoal({ onDone }: { onDone: (g: Goal) => void }) {
     : null
   const preview = useMemo(() => (draft ? generatePlan(draft, data.profile)[0] : null), [type, weeks, phase, n, equipment, start, data.profile, goalSport]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const isYouth = (data.profile.age ?? 99) < 18
+
   if (!type) {
-    const order = [...rec, ...(Object.keys(GOALS) as GoalType[]).filter(g => !rec.includes(g))]
+    const trainingGoalTypes = (Object.keys(GOALS) as GoalType[]).filter(g => g !== 'body')
+    const order = [...rec, ...trainingGoalTypes.filter(g => !rec.includes(g))]
     return (
       <div className="stack sm">
         {order.map(k => (
@@ -132,8 +137,19 @@ function NewGoal({ onDone }: { onDone: (g: Goal) => void }) {
             </span>
           </button>
         ))}
+        <button className="goal-tile" onClick={() => { setType('body'); setWeeks(12) }}>
+          <GoalIcon type="body" />
+          <span className="grow">
+            <b style={{ fontSize: 16 }}>{GOALS.body.title}</b>
+            <div className="small muted" style={{ marginTop: 2 }}>{GOALS.body.blurb}</div>
+          </span>
+        </button>
       </div>
     )
+  }
+
+  if (type === 'body') {
+    return <NewBodyGoal onBack={() => setType(null)} onDone={onDone} isYouth={isYouth} />
   }
 
   return (
@@ -190,6 +206,74 @@ function NewGoal({ onDone }: { onDone: (g: Goal) => void }) {
         </div>
       )}
       <button className="btn block lg" onClick={() => draft && onDone(draft)}>Start this plan</button>
+    </div>
+  )
+}
+
+function NewBodyGoal({ onBack, onDone, isYouth }: { onBack: () => void; onDone: (g: Goal) => void; isYouth: boolean }) {
+  const [direction, setDirection] = useState<BodyDirection>('maintain')
+  const [weeks, setWeeks] = useState(12)
+  const thisMon = mondayOf(today())
+
+  const DIRECTIONS: { value: BodyDirection; label: string; desc: string }[] = [
+    ...(isYouth ? [] : [{ value: 'lose' as BodyDirection, label: 'Lean out', desc: 'Reduce body fat while keeping performance' }]),
+    { value: 'maintain', label: 'Maintain', desc: 'Fuel performance without changing weight' },
+    { value: 'gain', label: 'Build size', desc: 'Add muscle mass alongside your training' },
+  ]
+
+  if (isYouth) {
+    return (
+      <div className="stack">
+        <div className="row">
+          <button className="icon-btn" onClick={onBack} aria-label="Back"><Icon name="left" size={18} /></button>
+          <GoalIcon type="body" size={38} />
+          <h3 className="grow" style={{ fontSize: 19 }}>Body composition</h3>
+        </div>
+        <Banner kind="info">Talk to a coach, parent or GP about weight goals. For now you can track nutrition for performance: choose Maintain or Build size.</Banner>
+        <div className="card stack">
+          <div className="field">
+            Goal
+            <Chips
+              options={[{ value: 'maintain' as BodyDirection, label: 'Maintain' }, { value: 'gain' as BodyDirection, label: 'Build size' }]}
+              value={direction === 'lose' ? 'maintain' : direction}
+              onChange={setDirection}
+            />
+          </div>
+          <div className="field">Length<Chips options={[4, 8, 12].map(v => ({ value: v, label: `${v} weeks` }))} value={weeks} onChange={setWeeks} /></div>
+        </div>
+        <button className="btn block lg" onClick={() => onDone({ id: uid(), type: 'body', startDate: thisMon, weeks, extraSessions: 0, equipment: 'minimal', phase: 'in', active: true, createdAt: today(), bodyDirection: direction })}>
+          Set goal
+        </button>
+      </div>
+    )
+  }
+
+  const chosen = DIRECTIONS.find(d => d.value === direction) ?? DIRECTIONS[0]
+  return (
+    <div className="stack">
+      <div className="row">
+        <button className="icon-btn" onClick={onBack} aria-label="Back"><Icon name="left" size={18} /></button>
+        <GoalIcon type="body" size={38} />
+        <h3 className="grow" style={{ fontSize: 19 }}>Body composition</h3>
+      </div>
+      <div className="card stack">
+        <div className="field">
+          What's your goal?
+          <Chips<BodyDirection>
+            options={DIRECTIONS.map(d => ({ value: d.value, label: d.label }))}
+            value={direction}
+            onChange={setDirection}
+          />
+          <span className="tiny muted">{chosen.desc}</span>
+        </div>
+        <div className="field">Length<Chips options={[4, 8, 12].map(v => ({ value: v, label: `${v} weeks` }))} value={weeks} onChange={setWeeks} /></div>
+      </div>
+      <div className="small muted" style={{ padding: '0 4px' }}>
+        You'll get daily targets for calories and protein, adjusted for training and match days. Log your food to track progress.
+      </div>
+      <button className="btn block lg" onClick={() => onDone({ id: uid(), type: 'body', startDate: thisMon, weeks, extraSessions: 0, equipment: 'minimal', phase: 'in', active: true, createdAt: today(), bodyDirection: direction })}>
+        Set goal
+      </button>
     </div>
   )
 }

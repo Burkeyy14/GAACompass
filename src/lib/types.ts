@@ -44,6 +44,8 @@ export interface Profile {
   phase: Phase
   plan: 'free' | 'pro'
   onboarded: boolean
+  /** Optional MyFitnessPal profile URL (myfitnesspal.com/…). */
+  mfpUrl?: string
 }
 
 export type TightnessLevel = 'none' | 'mild' | 'sharp'
@@ -113,7 +115,9 @@ export interface FreeSession {
   notes?: string
 }
 
-export type GoalType = 'speed' | 'power' | 'strength' | 'engine' | 'agility' | 'hamstring' | 'frees' | 'skills'
+export type GoalType = 'speed' | 'power' | 'strength' | 'engine' | 'agility' | 'hamstring' | 'frees' | 'skills' | 'body'
+
+export type BodyDirection = 'lose' | 'maintain' | 'gain'
 
 export interface Goal {
   id: string
@@ -127,6 +131,26 @@ export interface Goal {
   createdAt: string
   /** For frees/skills goals, which code the plan is for. Defaults to primarySport. */
   sport?: Sport
+  /** For body goals only. */
+  bodyDirection?: BodyDirection
+}
+
+/** Per-day nutrition log. source tracks where it came from for future integrations. */
+export interface NutritionLog {
+  id: string   // = date YYYY-MM-DD
+  date: string
+  kcal: number
+  protein: number
+  carbs?: number
+  fat?: number
+  source: 'manual' | 'csv' | 'mfp'
+}
+
+/** Body-weight measurement. */
+export interface WeightLog {
+  id: string   // = date YYYY-MM-DD
+  date: string
+  kg: number
 }
 
 export type BenchmarkTest =
@@ -155,6 +179,8 @@ export interface AppData {
   frees: FreeSession[]
   goals: Goal[]
   benchmarks: Benchmark[]
+  nutrition: NutritionLog[]
+  weights: WeightLog[]
 }
 
 export type CollectionKey = Exclude<keyof AppData, 'profile'>

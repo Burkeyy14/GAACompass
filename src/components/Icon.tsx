@@ -253,6 +253,7 @@ export function CatBadge({ cat, size = 36 }: { cat: string; size?: number }) {
 }
 
 export const GOAL_ICON: Record<string, IconName> = {
+  body: 'flame',
   speed: 'bolt',
   power: 'sparkle',
   strength: 'dumbbell',
@@ -263,6 +264,7 @@ export const GOAL_ICON: Record<string, IconName> = {
   skills: 'ball',
 }
 export const GOAL_TINT: Record<string, string> = {
+  body: '#ff6b35',
   speed: '#ff9f0a',
   power: '#ff375f',
   strength: '#7c5cff',

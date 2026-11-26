@@ -15,7 +15,7 @@ const KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY as string | undefined
 export const supabase: SupabaseClient | null = URL && KEY ? createClient(URL, KEY) : null
 export const cloudAvailable = !!supabase
 
-const COLLECTIONS: CollectionKey[] = ['checkins', 'weekPlans', 'sessions', 'frees', 'goals', 'benchmarks']
+const COLLECTIONS: CollectionKey[] = ['checkins', 'weekPlans', 'sessions', 'frees', 'goals', 'benchmarks', 'nutrition', 'weights']
 
 type Op = { op: 'put'; kind: string; id: string; data: unknown } | { op: 'del'; kind: string; id: string }
 

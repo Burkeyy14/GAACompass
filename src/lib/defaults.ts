@@ -58,6 +58,6 @@ export function normalizeProfile(raw: Partial<Profile> & Record<string, unknown>
 }
 
 export function emptyData(): AppData {
-  return { profile: { ...DEFAULT_PROFILE }, checkins: [], weekPlans: [], sessions: [], frees: [], goals: [], benchmarks: [] }
+  return { profile: { ...DEFAULT_PROFILE }, checkins: [], weekPlans: [], sessions: [], frees: [], goals: [], benchmarks: [], nutrition: [], weights: [] }
 }
 

@@ -9,6 +9,7 @@ import { ZoneTable } from './Train'
 import { Icon } from '../components/Icon'
 import { Benchmarks } from './Goals'
 import type { BenchmarkTest } from '../lib/types'
+import { NutritionProgress } from './NutritionLog'
 
 export function streaks(dates: string[], t: string) {
   const set = new Set(dates)
@@ -118,6 +119,8 @@ export function Progress({ nav }: { nav: Nav }) {
       {allAttempts.length > 0 && <ZoneTable attempts={allAttempts} />}
 
       {testsWithData.length > 0 && <Benchmarks tests={testsWithData} />}
+
+      <NutritionProgress />
 
       <div className="section-label">Pro insights</div>
       <ProGate nav={nav} title="Readiness insights" icon="pulse" blurb="See what's dragging your recovery down (sleep, stress, soreness) and which days of the week you're least fresh.">
