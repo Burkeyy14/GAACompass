@@ -129,6 +129,20 @@ Stripe charges a fee per transaction (check their current EU pricing). There's n
 
 ---
 
+## Upgrading an existing deployment
+
+If you already have a live Supabase database and are upgrading from an earlier version, run any new migration files in order:
+
+```
+supabase/migrations/002_nutrition.sql   — adds 'nutrition' and 'weights' record kinds
+```
+
+**How:** Supabase → SQL Editor → New query → paste the file → Run. Each migration is safe to re-run.
+
+Existing user data is never touched. `normalizeProfile()` in the app migrates old profile shapes on first load.
+
+---
+
 ## Running it on your computer
 
 ```bash

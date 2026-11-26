@@ -76,7 +76,7 @@ export function usePro(): ProState {
   return v
 }
 
-export const APP_VERSION = '1.0.0-beta'
+export const APP_VERSION = '1.1.0-beta'
 
 export const PRICE_LABEL = {
   month: (import.meta.env.VITE_PRICE_MONTHLY_LABEL as string | undefined) ?? '€3.99 / month',
