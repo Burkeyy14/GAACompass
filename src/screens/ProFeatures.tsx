@@ -187,6 +187,58 @@ export function LoadTrend() {
   )
 }
 
+// ---------- consolidated Pro teaser / insights block ----------
+
+const PRO_FEATURES = [
+  { icon: 'pulse', title: 'Readiness insights', blurb: "What's dragging your recovery down and which days you're least fresh." },
+  { icon: 'dumbbell', title: 'Strength tracker', blurb: 'Estimated maxes and personal bests for every lift you log.' },
+  { icon: 'trend', title: 'Load ratio trend', blurb: 'Ten weeks of load spikes so you can see injury risk building.' },
+  { icon: 'ball', title: 'Shot map', blurb: 'Every free on one pitch, with accuracy from the left, centre and right.' },
+] as const
+
+export function ProInsightsBlock({ nav }: { nav: Nav }) {
+  const { pro } = usePro()
+
+  if (pro) {
+    return (
+      <>
+        <div className="section-label">Pro insights</div>
+        <ReadinessInsights />
+        <StrengthTracker />
+        <LoadTrend />
+        <FreesAnalytics />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <div className="section-label">Pro insights</div>
+      <button className="card" onClick={() => nav.open({ kind: 'pro' })} style={{ position: 'relative', overflow: 'hidden' }}>
+        <div className="row between" style={{ marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>Unlock Pro</h2>
+          <ProBadge />
+        </div>
+        <div className="stack sm">
+          {PRO_FEATURES.map(f => (
+            <div key={f.title} className="row" style={{ gap: 12 }}>
+              <span className="cat-badge" style={{ width: 32, height: 32, flexShrink: 0, background: 'linear-gradient(145deg, #ffcc00, #ff9f0a)' }}><Icon name={f.icon} size={17} stroke={2} /></span>
+              <div>
+                <div className="small" style={{ fontWeight: 700 }}>{f.title}</div>
+                <div className="tiny muted">{f.blurb}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div aria-hidden style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 6, alignItems: 'end', height: 48, marginTop: 14, filter: 'blur(3px)', opacity: 0.5 }}>
+          {[40, 55, 48, 70, 62, 80, 74, 92].map((h, i) => <div key={i} style={{ height: `${h}%`, borderRadius: 5, background: 'var(--accent)' }} />)}
+        </div>
+        <div className="link small" style={{ marginTop: 10 }}>See Pro <Icon name="right" size={14} /></div>
+      </button>
+    </>
+  )
+}
+
 // ---------- free-taking analytics ----------
 
 export function FreesAnalytics() {

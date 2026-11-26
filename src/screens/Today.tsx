@@ -75,7 +75,6 @@ export function Today({ nav }: { nav: Nav }) {
         </Banner>
       )}
 
-      <div className="section-label">Today's training</div>
       {items.map(item => <PlannedCard key={item.ref} item={item} nav={nav} />)}
       {planned.length > 0 && (
         <div className="card tight">
@@ -113,6 +112,9 @@ export function Today({ nav }: { nav: Nav }) {
         </button>
       </div>
 
+      <WeighInPrompt onLogWeight={() => setShowWeightLog(true)} />
+      <FuelRow onLogFood={() => setShowFoodLog(true)} />
+
       <div className="card tight">
         <div className="row between">
           <div className="row"><Icon name="trend" size={20} /><b>Training load</b></div>
@@ -140,9 +142,6 @@ export function Today({ nav }: { nav: Nav }) {
           </button>
         )
       })}
-
-      <WeighInPrompt onLogWeight={() => setShowWeightLog(true)} />
-      <FuelRow onLogFood={() => setShowFoodLog(true)} />
 
       <InstallPrompt />
 

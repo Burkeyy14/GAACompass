@@ -288,6 +288,10 @@ function GoalPlan({ goal, nav, onEnd }: { goal: Goal; nav: Nav; onEnd: () => voi
   const completed = plan.reduce((t, w) => t + w.sessions.filter(s => done.has(`${goal.id}:${w.week}:${s.session.key}`)).length, 0)
   const notes = personalNotes(athleteFrom(data.profile), data.profile)
   const [showNotes, setShowNotes] = useState(false)
+  const [showPast, setShowPast] = useState(false)
+
+  const pastWeeks = cur ? plan.filter(w => w.week < cur) : []
+  const visibleWeeks = cur && !showPast ? plan.filter(w => w.week >= cur) : plan
 
   return (
     <div className="stack">
@@ -306,7 +310,7 @@ function GoalPlan({ goal, nav, onEnd }: { goal: Goal; nav: Nav; onEnd: () => voi
         <div className="row between tiny muted" style={{ marginTop: 6 }}>
           <span>{completed} of {total} sessions</span>
           {notes.length > 0 && (
-            <button className="link tiny" onClick={() => setShowNotes(x => !x)}><Icon name="user" size={13} /> Tailored to you</button>
+            <button className="link tiny" onClick={() => setShowNotes(x => !x)} aria-expanded={showNotes}><Icon name="user" size={13} /> Tailored to you</button>
           )}
         </div>
         {showNotes && (
@@ -316,7 +320,13 @@ function GoalPlan({ goal, nav, onEnd }: { goal: Goal; nav: Nav; onEnd: () => voi
         )}
       </div>
 
-      {plan.map(w => (
+      {pastWeeks.length > 0 && (
+        <button className="btn glassy block sm" onClick={() => setShowPast(x => !x)} aria-expanded={showPast}>
+          {showPast ? <><Icon name="down" size={16} /> Hide completed weeks</> : <><Icon name="right" size={16} /> Show {pastWeeks.length} completed week{pastWeeks.length > 1 ? 's' : ''}</>}
+        </button>
+      )}
+
+      {visibleWeeks.map(w => (
         <details key={w.week} className="week" open={w.week === cur}>
           <summary>
             <div>

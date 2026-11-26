@@ -185,18 +185,18 @@ function YourWeek({ p, set }: { p: Profile; set: Set }) {
   )
 }
 
-/** Full profile editor (settings). */
-export function ProfileForm({ initial, onSave, cta }: { initial: Profile; onSave: (p: Profile) => void; cta: string }) {
+type SectionName = 'About you' | 'Your game' | 'Your week'
+
+/** Full profile editor (settings). Pass `section` to show only one section. */
+export function ProfileForm({ initial, onSave, cta, section }: { initial: Profile; onSave: (p: Profile) => void; cta: string; section?: SectionName }) {
   const [p, setP] = useState<Profile>(initial)
   const set: Set = patch => setP(x => ({ ...x, ...patch }))
+  const all = !section
   return (
     <div className="stack">
-      <div className="section-label">About you</div>
-      <AboutYou p={p} set={set} />
-      <div className="section-label">Your game</div>
-      <YourGame p={p} set={set} />
-      <div className="section-label">Your week</div>
-      <YourWeek p={p} set={set} />
+      {(all || section === 'About you') && <>{all && <div className="section-label">About you</div>}<AboutYou p={p} set={set} /></>}
+      {(all || section === 'Your game') && <>{all && <div className="section-label">Your game</div>}<YourGame p={p} set={set} /></>}
+      {(all || section === 'Your week') && <>{all && <div className="section-label">Your week</div>}<YourWeek p={p} set={set} /></>}
       <button className="btn block lg" onClick={() => onSave({ ...p, onboarded: true })}>{cta}</button>
     </div>
   )

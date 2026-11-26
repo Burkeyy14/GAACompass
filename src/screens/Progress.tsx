@@ -1,6 +1,6 @@
 import type { Nav } from '../App'
 import { useStore } from '../lib/store'
-import { ProGate, StrengthTracker, ReadinessInsights, LoadTrend, FreesAnalytics } from './ProFeatures'
+import { ProInsightsBlock } from './ProFeatures'
 import { addDays, daysBetween, fromISO, mondayOf, today } from '../lib/dates'
 import { recoveryScore } from '../lib/recovery'
 import { weeklyLoads } from '../lib/load'
@@ -122,19 +122,7 @@ export function Progress({ nav }: { nav: Nav }) {
 
       <NutritionProgress />
 
-      <div className="section-label">Pro insights</div>
-      <ProGate nav={nav} title="Readiness insights" icon="pulse" blurb="See what's dragging your recovery down (sleep, stress, soreness) and which days of the week you're least fresh.">
-        <ReadinessInsights />
-      </ProGate>
-      <ProGate nav={nav} title="Strength tracker" icon="dumbbell" blurb="Estimated maxes and personal bests for every lift you log in the workout player.">
-        <StrengthTracker />
-      </ProGate>
-      <ProGate nav={nav} title="Load ratio trend" icon="trend" blurb="Ten weeks of training-load spikes, so you can see injury risk building before it bites.">
-        <LoadTrend />
-      </ProGate>
-      <ProGate nav={nav} title="Shot map" icon="ball" blurb="Every free you've logged on one pitch, with accuracy from the left, centre and right.">
-        <FreesAnalytics />
-      </ProGate>
+      <ProInsightsBlock nav={nav} />
     </>
   )
 }

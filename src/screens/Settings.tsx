@@ -11,10 +11,13 @@ import { Banner } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { ProBadge } from './ProFeatures'
 
-export function Settings({ email, onSignOut, openPro, openFeedback, onClose }: { email: string | null; onSignOut: () => void; openPro: () => void; openFeedback: () => void; onClose: () => void }) {
+export function Settings({ email, onSignOut, openPro, openFeedback, onClose: _onClose }: { email: string | null; onSignOut: () => void; openPro: () => void; openFeedback: () => void; onClose: () => void }) {
   const { data, backend, updateProfile, replaceAll } = useStore()
   const pro = usePro()
   const [deleting, setDeleting] = useState(false)
+  const [openSection, setOpenSection] = useState<string | null>(null)
+
+  function toggleSection(s: string) { setOpenSection(x => x === s ? null : s) }
 
   function exportData() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -50,7 +53,33 @@ export function Settings({ email, onSignOut, openPro, openFeedback, onClose }: {
         </div>
       </button>
 
-      <ProfileForm initial={data.profile} cta="Save profile" onSave={p => { updateProfile(p); onClose() }} />
+      <div className="card flush">
+        <div className="list">
+          {(['About you', 'Your game', 'Your week'] as const).map(section => (
+            <div key={section}>
+              <button
+                className="li no-icon"
+                onClick={() => toggleSection(section)}
+                aria-expanded={openSection === section}
+              >
+                <Icon name="user" size={20} style={{ opacity: 0.6 }} />
+                <span className="grow title">{section}</span>
+                <Icon name={openSection === section ? 'down' : 'right'} size={18} className="chev" />
+              </button>
+              {openSection === section && (
+                <div style={{ padding: '0 16px 16px' }}>
+                  <ProfileForm
+                    initial={data.profile}
+                    cta="Save"
+                    onSave={p => { updateProfile(p); setOpenSection(null) }}
+                    section={section}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="section-label">Plan</div>
       <div className="card stack">
